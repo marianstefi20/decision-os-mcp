@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "decision-os": {
+      "command": "npx",
+      "args": ["-y", "decision-os-mcp"],
+      "env": {
+        "DECISION_OS_PATH": "/absolute/path/to/your-project/.decision-os"
+      }
+    }
+  }
+}

@@ -32,7 +32,9 @@ cp -r templates/.decision-os /path/to/your-project/
 
 Edit `config.yaml` with your project name.
 
-### 3. Configure Cursor
+### 3. Configure Your Agent
+
+#### Cursor
 
 Add to your project's `.cursor/mcp.json`:
 
@@ -55,6 +57,35 @@ Copy the Cursor rules template:
 ```bash
 cp templates/.cursor/rules/decision-os.mdc /path/to/your-project/.cursor/rules/
 ```
+
+#### Claude Code / Claude Desktop
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "decision-os": {
+      "command": "npx",
+      "args": ["-y", "decision-os-mcp"],
+      "env": {
+        "DECISION_OS_PATH": "/absolute/path/to/your-project/.decision-os"
+      }
+    }
+  }
+}
+```
+
+Copy the agent instructions template (includes a `.claude/rules/` symlink to AGENTS.md):
+
+```bash
+cp templates/AGENTS.md /path/to/your-project/
+cp -R templates/.claude /path/to/your-project/
+```
+
+> **Note:** Claude Desktop requires absolute paths in `DECISION_OS_PATH` (no `${workspaceFolder}`).
+
+[AGENTS.md](https://agents.md) is an open standard supported by 20+ coding agents including OpenAI Codex, Google Jules, Claude Code, Cursor, Aider, Zed, Warp, VS Code, and more. The `.claude/rules/` symlink lets Claude Code pick it up automatically too — one file, every agent.
 
 ## Tools
 
@@ -178,10 +209,14 @@ your-project/
 │   │       └── ...
 │   └── defaults/
 │       └── foundations.yaml  # F-prefixed project learnings
-├── .cursor/
+├── .cursor/                  # Cursor setup
 │   ├── mcp.json              # MCP server config
 │   └── rules/
-│       └── decision-os.mdc   # LLM instructions
+│       └── decision-os.mdc   # LLM instructions (Cursor format)
+├── .claude/                  # Claude Code setup
+│   └── rules/
+│       └── decision-os.md    # -> symlink to ../../AGENTS.md
+├── AGENTS.md                 # Agent instructions (Claude Code, Codex, Jules, etc.)
 └── src/
 ```
 

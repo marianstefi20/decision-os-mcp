@@ -1,0 +1,69 @@
+# Decision OS MCP
+
+MCP server for Decision OS — an LLM-native decision tracking and learning system. TypeScript, Node.js 18+, ES modules, `@modelcontextprotocol/sdk`, YAML storage, Zod validation.
+
+## Commands
+
+```bash
+npm install          # Install dependencies
+npm run build        # Compile TypeScript (tsc)
+npm run dev          # Watch mode (tsc --watch)
+npm test             # Run all tests (vitest run)
+npm run test:watch   # Watch tests (vitest)
+npm start            # Run server (set DECISION_OS_PATH first)
+```
+
+Run `npm run build && npm test` before committing. All tests must pass.
+
+## Architecture
+
+```
+src/
+├── index.ts                  # MCP server entry, tool definitions, request handler
+├── schemas.ts                # Zod schemas for all types and tool inputs
+├── storage.ts                # Single-scope storage engine (YAML read/write)
+└── hierarchical-storage.ts   # Multi-scope storage (PROJECT + GLOBAL cascading)
+test/
+├── storage.test.ts
+└── hierarchical-storage.test.ts
+templates/                    # Setup templates for consumers
+```
+
+- Entry point registers 13 MCP tools via `@modelcontextprotocol/sdk`
+- All tool input validation uses Zod schemas from `schemas.ts`
+- Storage is YAML-based, file-system only, no network calls
+- Hierarchical storage merges `~/.decision-os/` (GLOBAL) with project-level `.decision-os/` (PROJECT)
+- PROJECT scope wins over GLOBAL on conflicts
+
+## Conventions
+
+- ES modules (`"type": "module"` in package.json) — use `.js` extensions in imports
+- Strict TypeScript (`strict: true`, target ES2022, NodeNext module resolution) — no `any`, no `@ts-ignore`
+- Tool definitions in `TOOLS` array follow MCP SDK `Tool` type with `annotations`
+- All tool handlers live in the `switch` block inside `CallToolRequestSchema` handler
+- Zod for all input validation; errors formatted as `path: message`
+- Error handling: `ZodError` → formatted validation message; `Error` → `.message`; else → `String(error)`
+- Regret values accept both number (0-3) and string ("0"-"3") via `z.preprocess`
+- Foundation IDs: `F-NNNN` (project), `GF-NNNN` (global)
+- Pressure event IDs: `PE-NNNN`
+- Case IDs: `NNNN-slug-title`
+
+## Testing
+
+- Tests use Vitest with temp directories for isolation
+- Test files: `test/storage.test.ts`, `test/hierarchical-storage.test.ts`
+
+## Adding a New Tool
+
+1. Add input schema to `schemas.ts`
+2. Add `Tool` definition to `TOOLS` array in `index.ts` (include `annotations`)
+3. Add handler case to the `switch` block in the `CallToolRequestSchema` handler
+4. Add tests in `test/`
+5. Update tool table in `README.md`
+
+## PR Guidelines
+
+- Title format: descriptive summary of the change
+- Run `npm run build && npm test` before opening a PR
+- Include test coverage for new tools or storage logic
+- Update `README.md` tool table if adding/removing tools
