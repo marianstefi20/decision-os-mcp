@@ -1,6 +1,6 @@
 {
   "name": "decision-os-mcp",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "MCP server for Decision OS - LLM-native decision tracking and learning system",
   "type": "module",
   "main": "dist/index.js",
@@ -20,7 +20,17 @@
     "decision-os",
     "llm",
     "cursor",
+    "claude",
+    "codex",
+    "agents-md",
     "ai-engineering"
+  ],
+  "files": [
+    "dist/",
+    "templates/",
+    "AGENTS.md",
+    "README.md",
+    "PRIVACY.md"
   ],
   "author": "",
   "license": "MIT",
