@@ -3,7 +3,7 @@ import { existsSync } from "fs";
 import { readFile, rm, mkdir } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
-import { DecisionOSStorage } from "../src/storage.js";
+import { DecisionOSStorage } from "../src/core/storage.js";
 
 let storage: DecisionOSStorage;
 let testDir: string;

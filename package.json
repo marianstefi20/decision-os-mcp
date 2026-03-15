@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "decision-os-mcp": "dist/index.js"
+    "decision-os-mcp": "dist/server/index.js",
+    "decision-os-observer": "dist/integrations/litellm/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -28,6 +29,7 @@
   "files": [
     "dist/",
     "templates/",
+    "integrations/",
     "AGENTS.md",
     "README.md",
     "PRIVACY.md"
@@ -36,6 +38,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "openai": "^6.29.0",
     "yaml": "^2.3.4",
     "zod": "^3.22.4"
   },

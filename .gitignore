@@ -17,3 +17,7 @@ dist/
 
 # Project's own DecisionOS data (not the templates)
 /.decision-os/
+
+# Python
+__pycache__/
+*.pyc

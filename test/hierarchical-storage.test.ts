@@ -4,7 +4,7 @@ import { rm, mkdir, writeFile } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
 import YAML from "yaml";
-import { HierarchicalDecisionOSStorage } from "../src/hierarchical-storage.js";
+import { HierarchicalDecisionOSStorage } from "../src/core/hierarchical-storage.js";
 
 let projectDir: string;
 let globalDir: string;

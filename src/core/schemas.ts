@@ -294,3 +294,79 @@ export type CheckPolicyInput = z.infer<typeof CheckPolicyInput>;
 export type SearchPressuresInput = z.infer<typeof SearchPressuresInput>;
 export type SetActiveCaseInput = z.infer<typeof SetActiveCaseInput>;
 export type QuickPressureInput = z.infer<typeof QuickPressureInput>;
+
+// ============================================================================
+// OBSERVER — Session-local meta-state for conversation observation
+// ============================================================================
+
+export const ObserverTaskStage = z.enum(["UNKNOWN", "INTAKE", "EXECUTING", "DONE"]);
+export const ObserverCaseStatus = z.enum(["NONE", "OPEN", "CLOSED"]);
+
+export const ObserverEventType = z.enum([
+  "TASK_START",
+  "PRESSURE_DETECTED",
+  "COMPLETION_SIGNAL",
+  "CASE_OPENED",
+  "CASE_CLOSED",
+]);
+
+export const ObserverEvent = z.object({
+  turn_index: z.number(),
+  type: ObserverEventType,
+  summary: z.string(),
+  artifact_id: z.string().optional(), // Decision OS ID (case ID, PE ID) from projection
+});
+
+export const ObserverMetaState = z.object({
+  session_id: z.string(),
+  last_processed_turn: z.number(),
+
+  task_label: z.string().optional(),
+  task_stage: ObserverTaskStage.default("UNKNOWN"),
+
+  case_status: ObserverCaseStatus.default("NONE"),
+  active_case_id: z.string().optional(),
+
+  open_pressure_summaries: z.array(z.string()).default([]),
+  decision_candidate_summaries: z.array(z.string()).default([]),
+  meta_summary: z.string().default(""),
+
+  event_log: z.array(ObserverEvent).default([]),
+});
+
+export type ObserverTaskStage = z.infer<typeof ObserverTaskStage>;
+export type ObserverCaseStatus = z.infer<typeof ObserverCaseStatus>;
+export type ObserverEventType = z.infer<typeof ObserverEventType>;
+export type ObserverEvent = z.infer<typeof ObserverEvent>;
+export type ObserverMetaState = z.infer<typeof ObserverMetaState>;
+
+// ============================================================================
+// OBSERVER — Engine I/O contract
+// ============================================================================
+
+export const ObserverTurn = z.object({
+  turn_index: z.number(),
+  role: z.enum(["user", "assistant", "tool"]),
+  content: z.string(),
+});
+
+export const ObserverAction = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("CREATE_CASE"),
+    title: z.string(),
+    goal: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("LOG_PRESSURE"),
+    summary: z.string(),
+    expected: z.string().optional(),
+    actual: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("CLOSE_CASE"),
+    notes: z.string().optional(),
+  }),
+]);
+
+export type ObserverTurn = z.infer<typeof ObserverTurn>;
+export type ObserverAction = z.infer<typeof ObserverAction>;
