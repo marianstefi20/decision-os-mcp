@@ -120,7 +120,7 @@ export function createLLMDetect(config: LLMDetectConfig): DetectFn {
   return async (state, turn): Promise<DetectionResult> => {
     const response = await client.chat.completions.create({
       model: config.model,
-      max_tokens: config.maxTokens ?? DEFAULT_MAX_TOKENS,
+      max_completion_tokens: config.maxTokens ?? DEFAULT_MAX_TOKENS,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: buildUserPrompt(state, turn) },
