@@ -21,3 +21,6 @@ dist/
 # Python
 __pycache__/
 *.pyc
+
+# Claude Code worktree/session state
+.claude/

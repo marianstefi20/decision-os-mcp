@@ -6,10 +6,10 @@ messages and response as JSON on stdin.
 
 Setup in litellm config.yaml:
   litellm_settings:
-    callbacks: integrations.litellm.decision_os_callback.decision_os_handler
+    callbacks: decision_os_callback.decision_os_handler
 
 Environment variables:
-  DECISION_OS_PATH     - path to workspace containing .decision-os/
+  DECISION_OS_PATH     - global fallback workspace (default: ~/.decision-os)
   DECISION_OS_BIN      - path to the observer CLI (default: dist/integrations/litellm/cli.js)
   DECISION_OS_NODE_BIN - path to node binary (default: node)
 
@@ -17,22 +17,50 @@ Environment variables:
   OBSERVER_MODEL       - model ID (e.g. "claude-sonnet-4-20250514")
   OBSERVER_API_KEY     - API key for the observer's LLM provider
   OBSERVER_BASE_URL    - base URL (e.g. "https://api.openai.com/v1")
+
+Workspace resolution:
+  The callback auto-discovers project-scoped .decision-os/ directories by
+  scanning file paths mentioned in the conversation. If a message references
+  /Users/you/Projects/foo/src/bar.py and /Users/you/Projects/foo/.decision-os/
+  exists, that project root is used. Falls back to DECISION_OS_PATH.
 """
 
 import json
 import os
+import re
 import subprocess
 import sys
 import uuid
 import asyncio
+from pathlib import Path
 from typing import Any, Optional
 
 from litellm.integrations.custom_logger import CustomLogger
 
+# Matches absolute file paths in message content
+_PATH_RE = re.compile(r'(/(?:Users|home)/\S+)')
+
+
+def _find_project_root(text: str) -> str | None:
+    """Extract absolute paths from text and find the nearest parent with .decision-os/."""
+    paths = _PATH_RE.findall(text)
+    for raw_path in paths:
+        # Strip trailing punctuation/quotes that regex may capture
+        clean = raw_path.rstrip(".,;:'\")}>]")
+        p = Path(clean)
+        # Walk up to find a directory containing .decision-os/
+        for parent in [p] + list(p.parents):
+            if (parent / ".decision-os").is_dir():
+                return str(parent)
+    return None
+
 
 class DecisionOSCallback(CustomLogger):
     def __init__(self):
-        self.workspace_path = os.environ.get("DECISION_OS_PATH", os.getcwd())
+        self.global_workspace = os.environ.get(
+            "DECISION_OS_PATH",
+            os.path.join(Path.home(), ".decision-os"),
+        )
         repo_path = os.environ.get("DECISION_OS_REPO", os.path.dirname(__file__))
         self.cli_path = os.environ.get(
             "DECISION_OS_BIN",
@@ -42,6 +70,8 @@ class DecisionOSCallback(CustomLogger):
 
         # Track turn offsets per session to ensure incremental processing
         self._turn_offsets: dict[str, int] = {}
+        # Cache resolved workspace per session
+        self._session_workspaces: dict[str, str] = {}
 
     def _get_session_id(self, kwargs: dict) -> str:
         """Extract or generate a session ID from the request metadata."""
@@ -90,6 +120,25 @@ class DecisionOSCallback(CustomLogger):
         except (AttributeError, IndexError):
             return None
 
+    def _resolve_workspace(self, session_id: str, messages: list[dict], response: dict | None) -> str:
+        """Resolve workspace path: check cache, scan for project roots, fall back to global."""
+        if session_id in self._session_workspaces:
+            return self._session_workspaces[session_id]
+
+        # Scan all message content + response for file paths
+        all_text = " ".join(m["content"] for m in messages)
+        if response and response.get("content"):
+            all_text += " " + response["content"]
+
+        project_root = _find_project_root(all_text)
+        if project_root:
+            self._session_workspaces[session_id] = project_root
+            print(f"[Decision OS] Resolved workspace: {project_root}", file=sys.stderr, flush=True)
+            return project_root
+
+        # No project found yet — use global. Don't cache so we retry next turn.
+        return self.global_workspace
+
     async def async_log_success_event(
         self, kwargs: dict, response_obj: Any, start_time: Any, end_time: Any
     ):
@@ -103,11 +152,12 @@ class DecisionOSCallback(CustomLogger):
             if not messages and not response:
                 return
 
+            workspace_path = self._resolve_workspace(session_id, messages, response)
             turn_offset = self._turn_offsets.get(session_id, 0)
 
             cli_input = json.dumps({
                 "session_id": session_id,
-                "workspace_path": self.workspace_path,
+                "workspace_path": workspace_path,
                 "messages": messages,
                 "response": response or {"role": "assistant", "content": ""},
                 "turn_offset": turn_offset,
