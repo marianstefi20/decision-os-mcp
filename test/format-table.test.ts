@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { formatContextTable, type GetContextResult } from "./format-table.js";
-import type { FoundationWithSource } from "../core/hierarchical-storage.js";
+import { formatContextTable, type GetContextResult } from "../src/server/format-table.js";
+import type { FoundationWithSource } from "../src/core/hierarchical-storage.js";
 
 function makeFoundation(overrides: Partial<FoundationWithSource> & { id: string; title: string }): FoundationWithSource {
   return {
