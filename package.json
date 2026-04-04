@@ -29,7 +29,10 @@
   "files": [
     "dist/",
     "templates/",
-    "integrations/",
+    "integrations/**/*.py",
+    "integrations/**/*.sh",
+    "integrations/**/*.yaml",
+    "integrations/**/env.example",
     "AGENTS.md",
     "README.md",
     "PRIVACY.md"
