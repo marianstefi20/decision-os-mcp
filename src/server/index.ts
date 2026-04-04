@@ -618,7 +618,7 @@ async function main() {
   const server = new Server(
     {
       name: "decision-os",
-      version: "0.5.0",
+      version: "0.5.1",
     },
     {
       capabilities: {
