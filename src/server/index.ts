@@ -9,6 +9,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { ZodError } from "zod";
 import { HierarchicalDecisionOSStorage, createHierarchicalStorage } from "../core/hierarchical-storage.js";
+import { formatContextTable } from "./format-table.js";
 import {
   LogPressureInput,
   CreateCaseInput,
@@ -79,6 +80,11 @@ Returns the project name, active case details, applicable foundations with sourc
       type: "object",
       properties: {
         ...WORKSPACE_PATH_PROP,
+        format: {
+          type: "string",
+          enum: ["json", "table"],
+          description: 'Output format. "table" returns a compact markdown table of foundations — ideal for start-of-conversation context loading. "json" returns full context with active case, pressures, and conflicts (default).',
+        },
       },
     },
     annotations: {
@@ -637,23 +643,28 @@ async function main() {
 
       switch (name) {
         case "get_context": {
+          const format = rawArgs.format as string | undefined;
           const context = await storage.getContext();
-          
-          // Format conflicts for visibility
+
+          if (format === "table") {
+            return { content: [{ type: "text", text: formatContextTable(context) }] };
+          }
+
+          // Default: full JSON format
           let conflictWarning = "";
           if (context.conflicts.length > 0) {
             conflictWarning = "\n\n⚠️ FOUNDATION CONFLICTS DETECTED:\n" +
-              context.conflicts.map(c => 
+              context.conflicts.map(c =>
                 `- ${c.title}: ${c.recommendation}`
               ).join("\n");
           }
-          
+
           // Annotate foundations with scope
           const annotatedFoundations = context.relevant_foundations.map(f => ({
             ...f,
             scope_indicator: f._source_scope === "GLOBAL" ? "🌐 GLOBAL" : "📁 PROJECT",
           }));
-          
+
           return {
             content: [
               {
