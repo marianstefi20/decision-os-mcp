@@ -31,6 +31,15 @@ if [[ ! -x "$LITELLM_PYTHON_BIN" ]]; then
 fi
 
 # Load environment
+if [[ ! -f "$SCRIPT_DIR/.env" ]]; then
+  echo "ERROR: .env file not found at $SCRIPT_DIR/.env" >&2
+  echo "" >&2
+  echo "Create one from the example:" >&2
+  echo "  cp $SCRIPT_DIR/env.example $SCRIPT_DIR/.env" >&2
+  echo "" >&2
+  echo "Then fill in your API keys (OBSERVER_API_KEY) and local paths." >&2
+  exit 1
+fi
 set -a
 source "$SCRIPT_DIR/.env"
 set +a
